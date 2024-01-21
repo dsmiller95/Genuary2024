@@ -16,9 +16,17 @@ pub struct BoidBehavior {
     pub wander_angle_range: f32,
     pub wander_frequency: f32,
 
-    pub cohesion_radius: f32,
+    ////// Flocking //////
+    pub flocking_radius: f32,
+
     pub cohesion_force: f32,
     pub max_cohesion_force: f32,
+
+    /// units: rad/(s*rad)
+    pub alignment_force: f32,
+    /// units: rad
+    pub max_alignment_force: f32,
+    ////// Flocking //////
 
     // units are rad/s^2
     pub max_angular_acceleration: f32,

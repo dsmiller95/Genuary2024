@@ -17,9 +17,15 @@ impl Plugin for BoidsSimPlugin {
                 wander_force: WANDER_FORCE,
                 wander_angle_range: WANDER_ANGLE_RADIANS,
                 wander_frequency: WANDER_FREQUENCY,
-                cohesion_radius: COHESION_RADIUS,
+
+                flocking_radius: COHESION_RADIUS,
                 cohesion_force: COHESION_FORCE,
                 max_cohesion_force: MAX_COHESION_FORCE,
+                alignment_force: 1.0,
+                max_alignment_force: 2.0,
+
+                max_angular_acceleration: 0.1,
+
                 combined_drag_coefficient: COMBINED_DRAG_COEFFICIENT,
             })
             .add_systems(Startup, (add_boids, add_rendering))
@@ -27,7 +33,7 @@ impl Plugin for BoidsSimPlugin {
                 apply_flock_info,
                 (
                     (apply_avoidance, apply_wander, apply_cohesion),
-                    apply_drag,
+                    (apply_alignment, apply_drag),
                     add_velocity_to_position,
                     set_pos_vel_to_transform
                 ).chain(),

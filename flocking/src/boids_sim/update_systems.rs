@@ -80,7 +80,7 @@ pub fn apply_flock_info(behavior: Res<BoidBehavior>, mut query: Query<(&Position
                    (boid_a_pos, boid_a_vel, mut boid_a_flock_info),
                    (boid_b_pos, boid_b_vel, mut boid_b_flock_info)]) = combinations.fetch_next() {
         let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
-        if distance > behavior.cohesion_radius {
+        if distance > behavior.flocking_radius {
             continue;
         }
         boid_a_flock_info.append_boid(boid_b_pos, boid_b_vel);
@@ -103,6 +103,21 @@ pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, 
     }
 }
 
+pub fn apply_alignment(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&Position, &mut Velocity, &BoidFlockInfo), With<Boid>>){
+    for (position, mut velocity, flock_info) in query.iter_mut() {
+        let average_velocity = flock_info.average_velocity();
+        let average_direction = average_velocity.angle_between(Vec2::X);
+        let self_direction = velocity.vec.angle_between(Vec2::X);
+        let direction_delta = average_direction - self_direction;
+        if direction_delta <= EPSILON {
+            continue;
+        }
+        // rad
+        let mut force_mag = behavior.alignment_force * direction_delta * time.delta_seconds();
+        force_mag = force_mag.min(behavior.max_alignment_force);
+        velocity.vec = Vec2::from_angle(force_mag).rotate(velocity.vec);
+    }
+}
 
 pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){
     for (seed, mut velocity) in query.iter_mut() {
