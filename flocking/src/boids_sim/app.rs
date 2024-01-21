@@ -8,10 +8,9 @@ pub trait CanAddBoids {
 impl CanAddBoids for App {
     fn add_boids_app(&mut self) -> &mut Self {
         self
+            .add_plugins(DefaultPlugins)
             .add_systems(Startup, add_boids)
-            .add_systems(Update, hello_world)
-            .add_systems(Update, add_velocity_to_position)
-            .add_systems(Update, print_positions)
+            .add_systems(Update, (hello_world, (add_velocity_to_position, print_positions).chain() ))
     }
 }
 
@@ -22,7 +21,7 @@ fn hello_world(){
 fn add_boids(mut commands: Commands) {
     let mut rng = SmallRng::from_entropy();
     for _ in 0..BOID_N {
-        add_boid_to_world(&mut commands, &mut rng, 100.0, 10.0);
+        add_boid_to_world(&mut commands, &mut rng, SPACE_SIZE as f32, SPAWN_VEL);
     }
     println!("Added {} boids", BOID_N);
 }
