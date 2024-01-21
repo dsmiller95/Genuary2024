@@ -9,6 +9,7 @@ pub struct BoidBehavior {
     pub space_size: usize,
     pub avoidance_radius: f32,
     pub avoidance_force: f32,
+    pub max_avoidance_force: f32,
 
     pub wander_force: f32,
     // units are radians
@@ -17,6 +18,7 @@ pub struct BoidBehavior {
 
     pub cohesion_radius: f32,
     pub cohesion_force: f32,
+    pub max_cohesion_force: f32,
 
 
     // full drag formula is 1/2 * p * v^2 * C * A

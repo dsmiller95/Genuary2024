@@ -13,11 +13,13 @@ impl Plugin for BoidsSimPlugin {
                 space_size: SPACE_SIZE,
                 avoidance_radius: AVOIDANCE_RADIUS,
                 avoidance_force: AVOIDANCE_FORCE,
+                max_avoidance_force: MAX_AVOIDANCE_FORCE,
                 wander_force: WANDER_FORCE,
                 wander_angle_range: WANDER_ANGLE_RADIANS,
                 wander_frequency: WANDER_FREQUENCY,
                 cohesion_radius: COHESION_RADIUS,
                 cohesion_force: COHESION_FORCE,
+                max_cohesion_force: MAX_COHESION_FORCE,
                 combined_drag_coefficient: COMBINED_DRAG_COEFFICIENT,
             })
             .add_systems(Startup, (add_boids, add_rendering))

@@ -44,10 +44,11 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
     let mut combinations = query.iter_combinations_mut();
     while let Some([(boid_a_pos, mut boid_a_vel), (boid_b_pos, mut boid_b_vel)]) = combinations.fetch_next() {
         let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
-        if distance > behavior.avoidance_radius {
+        if distance > behavior.avoidance_radius || distance <= EPSILON {
             continue;
         }
-        let force_mag = behavior.avoidance_force / distance;
+        let mut force_mag = behavior.avoidance_force / distance;
+        force_mag = force_mag.min(behavior.max_avoidance_force);
         let force = (boid_a_pos.vec - boid_b_pos.vec) * force_mag;
         boid_a_vel.vec += force;
         boid_b_vel.vec -= force;
@@ -74,7 +75,14 @@ pub fn apply_flock_info(behavior: Res<BoidBehavior>, mut query: Query<(&Position
 pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &mut Velocity, &BoidFlockInfo), With<Boid>>){
     for (position, mut velocity, flock_info) in query.iter_mut() {
         let center = flock_info.average_position();
-        let force = (center - position.vec) * behavior.cohesion_force;
+        let delta = center - position.vec;
+        let delta_len = delta.length();
+        if delta_len <= EPSILON {
+            continue;
+        }
+        let mut force_mag = behavior.cohesion_force * delta.length();
+        force_mag = force_mag.min(behavior.max_cohesion_force);
+        let force = delta.normalize() * force_mag;
         velocity.vec += force;
     }
 }
