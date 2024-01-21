@@ -6,13 +6,10 @@ pub struct BoidsSimPlugin;
 impl Plugin for BoidsSimPlugin {
     fn build(&self, app: &mut App) {
         app
+            .insert_resource(PrintTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
             .add_systems(Startup, add_boids)
-            .add_systems(Update, (hello_world, (add_velocity_to_position, print_positions).chain() ));
+            .add_systems(Update, ((add_velocity_to_position, print_positions).chain() ));
     }
-}
-
-fn hello_world(){
-    println!("Hello World");
 }
 
 fn add_boids(mut commands: Commands) {

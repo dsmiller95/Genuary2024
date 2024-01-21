@@ -10,7 +10,10 @@ pub fn add_velocity_to_position(
     }
 }
 
-pub fn print_positions(query: Query<&Position>) {
+pub fn print_positions(time: Res<Time>, mut timer: ResMut<PrintTimer>, query: Query<&Position>) {
+    if !timer.0.tick(time.delta()).just_finished() {
+        return;
+    }
     for position in query.iter() {
         println!("Position: {:?}", position);
     }
