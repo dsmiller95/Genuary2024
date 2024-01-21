@@ -11,14 +11,16 @@ pub fn add_velocity_to_position(
     }
 }
 
-pub fn apply_friction(
+pub fn apply_drag(
     behavior: Res<BoidBehavior>,
     time: Res<Time>,
     mut query: Query<(&mut Velocity)>,
 ) {
     for mut velocity in query.iter_mut() {
-        let force = velocity.vec * behavior.friction_force;
-        velocity.vec -= force * time.delta_seconds();
+        let dist = velocity.vec.length();
+        let force_scalar = dist * dist * behavior.combined_drag_coefficient;
+        let force_vector = velocity.vec.normalize() * force_scalar;
+        velocity.vec -= force_vector * time.delta_seconds();
     }
 }
 
@@ -49,6 +51,31 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
         let force = (boid_a_pos.vec - boid_b_pos.vec) * force_mag;
         boid_a_vel.vec += force;
         boid_b_vel.vec -= force;
+    }
+}
+
+pub fn apply_flock_info(behavior: Res<BoidBehavior>, mut query: Query<(&Position,  &Velocity, &mut BoidFlockInfo), With<Boid>>){
+    for (pos, vel, mut flock_info) in query.iter_mut() {
+        flock_info.reset(pos, vel);
+    }
+    let mut combinations = query.iter_combinations_mut();
+    while let Some([
+                   (boid_a_pos, boid_a_vel, mut boid_a_flock_info),
+                   (boid_b_pos, boid_b_vel, mut boid_b_flock_info)]) = combinations.fetch_next() {
+        let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
+        if distance > behavior.cohesion_radius {
+            continue;
+        }
+        boid_a_flock_info.append_boid(boid_b_pos, boid_b_vel);
+        boid_b_flock_info.append_boid(boid_a_pos, boid_a_vel);
+    }
+}
+
+pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &mut Velocity, &BoidFlockInfo), With<Boid>>){
+    for (position, mut velocity, flock_info) in query.iter_mut() {
+        let center = flock_info.average_position();
+        let force = (center - position.vec) * behavior.cohesion_force;
+        velocity.vec += force;
     }
 }
 

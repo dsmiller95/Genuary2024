@@ -5,6 +5,7 @@ use crate::boids_sim::components::*;
 pub struct BoidBundle{
     boid: Boid,
     boid_seed: BoidSeed,
+    flock: BoidFlockInfo,
     position: Position,
     velocity: Velocity,
     sprite_bundle: SpriteBundle,
@@ -17,11 +18,15 @@ impl BoidBundle{
         let vx = rng.gen_range(-vel_max..vel_max);
         let vy = rng.gen_range(-vel_max..vel_max);
 
+        let position = Position::new(x, y);
+        let velocity = Velocity::new(vx, vy);
+
         Self{
             boid: Boid,
             boid_seed: BoidSeed(rng.gen_range(0.0..1.0)),
-            position: Position::new(x, y),
-            velocity: Velocity::new(vx, vy),
+            flock: BoidFlockInfo::new(&position, &velocity),
+            position,
+            velocity,
             sprite_bundle: SpriteBundle{
                 transform: Transform::from_xyz(x, y, 0.0),
                 sprite: Sprite{

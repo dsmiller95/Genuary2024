@@ -18,15 +18,16 @@ impl Plugin for BoidsSimPlugin {
                 wander_frequency: WANDER_FREQUENCY,
                 cohesion_radius: COHESION_RADIUS,
                 cohesion_force: COHESION_FORCE,
-                friction_force: FRICTION_FORCE,
+                combined_drag_coefficient: COMBINED_DRAG_COEFFICIENT,
             })
             .add_systems(Startup, (add_boids, add_rendering))
             .add_systems(Update, (
+                apply_flock_info,
                 (
-                    (apply_avoidance, apply_wander),
-                     apply_friction,
-                     add_velocity_to_position,
-                     set_pos_vel_to_transform
+                    (apply_avoidance, apply_wander, apply_cohesion),
+                    apply_drag,
+                    add_velocity_to_position,
+                    set_pos_vel_to_transform
                 ).chain(),
                 print_positions)
             );
