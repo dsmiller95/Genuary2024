@@ -11,10 +11,8 @@ pub struct BoidBehavior {
     pub avoidance_force: f32,
     pub max_avoidance_force: f32,
 
-    pub wander_force: f32,
     // units are radians
     pub wander_angle_range: f32,
-    pub wander_frequency: f32,
 
     ////// Flocking //////
     pub flocking_radius: f32,
@@ -41,37 +39,37 @@ pub struct BoidBehavior {
 pub struct Boid;
 
 #[derive(Component)] // seed is between 0 and 1
-pub struct BoidSeed(pub f32);
+pub struct BoidSeed(pub SmallRng);
 #[derive(Component)]
 pub struct BoidFlockInfo{
     center: Vec2,
-    velocity: Vec2,
+    direction: Vec2,
     count: usize,
 }
 
 impl BoidFlockInfo{
-    pub fn new(position: &Position, velocity: &Velocity) -> Self{
+    pub fn new(position: &Position, rotation: &Rotation) -> Self{
         Self{
             center: position.vec,
-            velocity: velocity.vec,
+            direction: rotation.vec(),
             count: 1,
         }
     }
 
-    pub fn append_boid(&mut self, position: &Position, velocity: &Velocity){
+    pub fn append_boid(&mut self, position: &Position, rotation: &Rotation){
         self.center += position.vec;
-        self.velocity += velocity.vec;
+        self.direction += rotation.vec();
         self.count += 1;
     }
 
-    pub fn reset(&mut self, position: &Position, velocity: &Velocity){
+    pub fn reset(&mut self, position: &Position, rotation: &Rotation){
         self.center = position.vec;
-        self.velocity = velocity.vec;
+        self.direction = rotation.vec();
         self.count = 1;
     }
 
-    pub fn average_velocity(&self) -> Vec2{
-        self.velocity / self.count as f32
+    pub fn average_direction(&self) -> Vec2{
+        self.direction / self.count as f32
     }
 
     pub fn average_position(&self) -> Vec2{
@@ -83,29 +81,30 @@ impl BoidFlockInfo{
 pub struct Position {
     pub vec: Vec2,
 }
+#[derive(Component, Debug)]
+pub struct Rotation {
+    pub radians: f32,
+}
 
 impl Position {
     pub fn new(x: f32, y: f32) -> Self {
         Self { vec: Vec2::new(x, y) }
     }
-    pub fn add_velocity(&mut self, velocity: &Velocity, time: &Time) {
-        self.vec += velocity.vec * time.delta_seconds();
-    }
-    pub fn set_transform(&self, transform: &mut Transform) {
-        transform.translation.x = self.vec.x;
-        transform.translation.y = self.vec.y;
+}
+
+impl Rotation {
+    pub fn vec(&self) -> Vec2 {
+        Vec2::from_angle(self.radians)
     }
 }
 
 #[derive(Component, Debug)]
-pub struct Velocity {
-    pub vec: Vec2,
+pub struct Speed {
+    pub pixels_per_second: f32,
 }
-
-impl Velocity {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self {vec: Vec2::new(x, y) }
-    }
+#[derive(Component, Debug)]
+pub struct RotationalVelocity {
+    pub radians_per_second: f32,
 }
 
 #[derive(Component, Debug)]

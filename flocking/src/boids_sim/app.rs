@@ -14,9 +14,7 @@ impl Plugin for BoidsSimPlugin {
                 avoidance_radius: AVOIDANCE_RADIUS,
                 avoidance_force: AVOIDANCE_FORCE,
                 max_avoidance_force: MAX_AVOIDANCE_FORCE,
-                wander_force: WANDER_FORCE,
                 wander_angle_range: WANDER_ANGLE_RADIANS,
-                wander_frequency: WANDER_FREQUENCY,
 
                 flocking_radius: COHESION_RADIUS,
                 cohesion_force: COHESION_FORCE,
@@ -32,8 +30,8 @@ impl Plugin for BoidsSimPlugin {
             .add_systems(Update, (
                 apply_flock_info,
                 (
-                    (apply_avoidance, apply_wander, apply_cohesion),
-                    (apply_alignment, apply_drag),
+                    (apply_avoidance),//, apply_wander, apply_cohesion),
+                    (apply_drag),//, apply_alignment),
                     add_velocity_to_position,
                     set_pos_vel_to_transform
                 ).chain(),
@@ -49,7 +47,7 @@ fn add_rendering(mut commands: Commands) {
 fn add_boids(mut commands: Commands) {
     let mut rng = SmallRng::from_entropy();
     for _ in 0..BOID_N {
-        commands.spawn(BoidBundle::new(&mut rng, SPACE_SIZE as f32, SPAWN_VEL));
+        commands.spawn(BoidBundle::new(&mut rng, SPACE_SIZE as f32, SPAWN_VEL, SPAWN_VEL_VARIANCE));
     }
     println!("Added {} boids", BOID_N);
 }

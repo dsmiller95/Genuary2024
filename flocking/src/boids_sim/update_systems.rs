@@ -1,42 +1,29 @@
 use std::f32::consts::PI;
+use std::ops::Mul;
 use super::components::*;
 use super::prelude::*;
 
-pub fn apply_steering_to_velocity(
-    behavior: Res<BoidBehavior>,
-    time: Res<Time>,
-    mut query: Query<(&mut Velocity, &mut SteeringForce)>) {
-    for (mut velocity, mut steering_force) in query.iter_mut() {
-        let clamped_force = steering_force.angular_acceleration.clamp(
-            -behavior.max_angular_acceleration,
-            behavior.max_angular_acceleration,
-        );
-        // rad/s^2 * s = rad/s
-        let impulse = clamped_force * time.delta_seconds();
-        todo!("figure out what steering force actually means");
-        steering_force.angular_acceleration = 0.0;
-    }
-}
 
 pub fn add_velocity_to_position(
     time: Res<Time>,
-    mut query: Query<(&mut Position, &Velocity)>,
+    mut query: Query<(&mut Position, &mut Rotation, &Speed, &RotationalVelocity )>,
 ) {
-    for (mut position, velocity) in query.iter_mut() {
-        position.add_velocity(&velocity, &time);
+    for (mut pos, mut rot, speed,  rot_vel) in query.iter_mut() {
+        rot.radians = (rot.radians + rot_vel.radians_per_second * time.delta_seconds()) % (2.0 * PI);
+        let velocity = speed.pixels_per_second * Vec2::from_angle(rot.radians);
+        pos.vec += velocity * time.delta_seconds();
     }
 }
 
 pub fn apply_drag(
     behavior: Res<BoidBehavior>,
     time: Res<Time>,
-    mut query: Query<(&mut Velocity)>,
+    mut query: Query<(&mut RotationalVelocity)>,
 ) {
     for mut velocity in query.iter_mut() {
-        let dist = velocity.vec.length();
+        let dist = velocity.radians_per_second;
         let force_scalar = dist * dist * behavior.combined_drag_coefficient;
-        let force_vector = velocity.vec.normalize() * force_scalar;
-        velocity.vec -= force_vector * time.delta_seconds();
+        velocity.radians_per_second -= force_scalar * time.delta_seconds();
     }
 }
 
@@ -49,82 +36,101 @@ pub fn print_positions(time: Res<Time>, mut timer: ResMut<PrintTimer>, query: Qu
     }
 }
 
-pub fn set_pos_vel_to_transform(mut query: Query<(&Position, &Velocity, &mut Transform), With<Boid>>) {
-    for (position, velocity, mut transform) in query.iter_mut() {
-        position.set_transform(&mut transform);
-        transform.rotation = Quat::from_rotation_z(velocity.vec.y.atan2(velocity.vec.x));
+pub fn set_pos_vel_to_transform(mut query: Query<(&Position, &Rotation, &mut Transform), With<Boid>>) {
+    for (pos, rot, mut transform) in query.iter_mut() {
+        transform.translation.x = pos.vec.x;
+        transform.translation.y = pos.vec.y;
+        transform.rotation = Quat::from_rotation_z(rot.radians);
     }
 }
 
-pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &mut Velocity), With<Boid>>){
+
+fn steer_avoid_accel(current_direction: Vec2, avoid_direction: Vec2) -> f32 {
+    steer_towards(current_direction, -avoid_direction)
+}
+/// returns a steering force between -PI and PI
+fn steer_towards(current_direction: Vec2, attract_direction: Vec2) -> f32 {
+    let a_to_b_angle = attract_direction.angle_between(current_direction);
+    -a_to_b_angle
+}
+
+pub fn apply_avoidance(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&Position, &Rotation, &mut RotationalVelocity), With<Boid>>){
     let mut combinations = query.iter_combinations_mut();
-    while let Some([(boid_a_pos, mut boid_a_vel), (boid_b_pos, mut boid_b_vel)]) = combinations.fetch_next() {
+    while let Some([
+               (boid_a_pos, boid_a_rot, mut boid_a_vel),
+               (boid_b_pos, boid_b_rot, mut boid_b_vel)
+           ]) = combinations.fetch_next() {
         let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
         if distance > behavior.avoidance_radius || distance <= EPSILON {
             continue;
         }
-        let mut force_mag = behavior.avoidance_force / distance;
-        force_mag = force_mag.min(behavior.max_avoidance_force);
-        let force = (boid_a_pos.vec - boid_b_pos.vec) * force_mag;
-        boid_a_vel.vec += force;
-        boid_b_vel.vec -= force;
+        let inverse_sq_dist = 1.0 / (distance * distance);
+        let direction_a_to_b = (boid_b_pos.vec - boid_a_pos.vec).normalize();
+        let direction_b_to_a = -direction_a_to_b;
+
+        let a_steering = steer_avoid_accel(boid_a_rot.vec(), direction_a_to_b)
+            .mul(behavior.avoidance_force * inverse_sq_dist)
+            .min(behavior.max_avoidance_force);
+        boid_a_vel.radians_per_second += a_steering * time.delta_seconds();
+
+        let b_steering = steer_avoid_accel(boid_b_rot.vec(), direction_b_to_a)
+            .mul(behavior.avoidance_force * inverse_sq_dist)
+            .min(behavior.max_avoidance_force);
+        boid_b_vel.radians_per_second += b_steering * time.delta_seconds();
     }
 }
 
-pub fn apply_flock_info(behavior: Res<BoidBehavior>, mut query: Query<(&Position,  &Velocity, &mut BoidFlockInfo), With<Boid>>){
-    for (pos, vel, mut flock_info) in query.iter_mut() {
-        flock_info.reset(pos, vel);
+pub fn apply_flock_info(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &Rotation, &mut BoidFlockInfo), With<Boid>>){
+    for (pos, rot, mut flock_info) in query.iter_mut() {
+        flock_info.reset(pos, rot);
     }
     let mut combinations = query.iter_combinations_mut();
     while let Some([
-                   (boid_a_pos, boid_a_vel, mut boid_a_flock_info),
-                   (boid_b_pos, boid_b_vel, mut boid_b_flock_info)]) = combinations.fetch_next() {
+                   (boid_a_pos, boid_a_rot, mut boid_a_flock_info),
+                   (boid_b_pos, boid_b_rot, mut boid_b_flock_info)]) = combinations.fetch_next() {
         let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
         if distance > behavior.flocking_radius {
             continue;
         }
-        boid_a_flock_info.append_boid(boid_b_pos, boid_b_vel);
-        boid_b_flock_info.append_boid(boid_a_pos, boid_a_vel);
+        boid_a_flock_info.append_boid(boid_b_pos, boid_b_rot);
+        boid_b_flock_info.append_boid(boid_a_pos, boid_a_rot);
     }
 }
 
-pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &mut Velocity, &BoidFlockInfo), With<Boid>>){
-    for (position, mut velocity, flock_info) in query.iter_mut() {
+pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, &Rotation, &mut RotationalVelocity, &BoidFlockInfo), With<Boid>>){
+    for (position, rot, mut velocity, flock_info) in query.iter_mut() {
         let center = flock_info.average_position();
         let delta = center - position.vec;
         let delta_len = delta.length();
         if delta_len <= EPSILON {
             continue;
         }
-        let mut force_mag = behavior.cohesion_force * delta.length();
-        force_mag = force_mag.min(behavior.max_cohesion_force);
-        let force = delta.normalize() * force_mag;
-        velocity.vec += force;
+        let directional_force = steer_towards(rot.vec(), delta.normalize())
+            .mul(behavior.cohesion_force)
+            .min(behavior.max_cohesion_force);
+        velocity.radians_per_second += directional_force;
     }
 }
 
-pub fn apply_alignment(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&Position, &mut Velocity, &BoidFlockInfo), With<Boid>>){
-    for (position, mut velocity, flock_info) in query.iter_mut() {
-        let average_velocity = flock_info.average_velocity();
-        let average_direction = average_velocity.angle_between(Vec2::X);
-        let self_direction = velocity.vec.angle_between(Vec2::X);
+pub fn apply_alignment(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&Position, &Rotation, &mut RotationalVelocity, &BoidFlockInfo), With<Boid>>){
+    for (position, rot, mut velocity, flock_info) in query.iter_mut() {
+        let average_direction = flock_info.average_direction().angle_between(Vec2::X);
+        let self_direction = rot.radians;
         let direction_delta = average_direction - self_direction;
         if direction_delta <= EPSILON {
             continue;
         }
         // rad
-        let mut force_mag = behavior.alignment_force * direction_delta * time.delta_seconds();
-        force_mag = force_mag.min(behavior.max_alignment_force);
-        velocity.vec = Vec2::from_angle(force_mag).rotate(velocity.vec);
+        let rot_force = direction_delta
+            .mul(behavior.alignment_force)
+            .min(behavior.max_alignment_force)
+            .mul(time.delta_seconds());
+        velocity.radians_per_second += rot_force;
     }
 }
 
-pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){
-    for (seed, mut velocity) in query.iter_mut() {
-        let t = (time.elapsed_seconds() * behavior.wander_frequency + seed.0) * PI * 2.0;
-        let current_dir = velocity.vec.y.atan2(velocity.vec.x);
-        let new_dir = current_dir + t.sin() * behavior.wander_angle_range;
-        let force = Vec2::new(new_dir.cos(), new_dir.sin()) * behavior.wander_force;
-        velocity.vec += force;
+pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&mut BoidSeed, &mut Rotation), With<Boid>>){
+    for (mut seed, mut rot) in query.iter_mut() {
+        rot.radians += seed.0.gen_range(-behavior.wander_angle_range..behavior.wander_angle_range);
     }
 }
