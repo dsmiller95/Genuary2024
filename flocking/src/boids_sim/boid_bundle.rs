@@ -8,6 +8,7 @@ pub struct BoidBundle{
     flock: BoidFlockInfo,
     position: Position,
     velocity: Velocity,
+    //steering_force: SteeringForce,
     sprite_bundle: SpriteBundle,
 }
 

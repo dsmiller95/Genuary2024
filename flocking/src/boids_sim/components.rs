@@ -20,6 +20,8 @@ pub struct BoidBehavior {
     pub cohesion_force: f32,
     pub max_cohesion_force: f32,
 
+    // units are rad/s^2
+    pub max_angular_acceleration: f32,
 
     // full drag formula is 1/2 * p * v^2 * C * A
     // where p is the density of the fluid, v is the velocity, C is the drag coefficient, and A is the cross-sectional area
@@ -96,4 +98,10 @@ impl Velocity {
     pub fn new(x: f32, y: f32) -> Self {
         Self {vec: Vec2::new(x, y) }
     }
+}
+
+#[derive(Component, Debug)]
+pub struct SteeringForce {
+    // units are rad/s^2
+    pub angular_acceleration: f32,
 }

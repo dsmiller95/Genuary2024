@@ -2,6 +2,22 @@ use std::f32::consts::PI;
 use super::components::*;
 use super::prelude::*;
 
+pub fn apply_steering_to_velocity(
+    behavior: Res<BoidBehavior>,
+    time: Res<Time>,
+    mut query: Query<(&mut Velocity, &mut SteeringForce)>) {
+    for (mut velocity, mut steering_force) in query.iter_mut() {
+        let clamped_force = steering_force.angular_acceleration.clamp(
+            -behavior.max_angular_acceleration,
+            behavior.max_angular_acceleration,
+        );
+        // rad/s^2 * s = rad/s
+        let impulse = clamped_force * time.delta_seconds();
+        todo!("figure out what steering force actually means");
+        steering_force.angular_acceleration = 0.0;
+    }
+}
+
 pub fn add_velocity_to_position(
     time: Res<Time>,
     mut query: Query<(&mut Position, &Velocity)>,
@@ -86,6 +102,7 @@ pub fn apply_cohesion(behavior: Res<BoidBehavior>, mut query: Query<(&Position, 
         velocity.vec += force;
     }
 }
+
 
 pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){
     for (seed, mut velocity) in query.iter_mut() {
