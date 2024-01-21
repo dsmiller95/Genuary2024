@@ -52,12 +52,12 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
     }
 }
 
-
-
 pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){
     for (seed, mut velocity) in query.iter_mut() {
         let t = (time.elapsed_seconds() * behavior.wander_frequency + seed.0) * PI * 2.0;
-        let force = Vec2::new((t * 3.0).cos(), (t * 5.0).sin()) * behavior.wander_force;
+        let current_dir = velocity.vec.y.atan2(velocity.vec.x);
+        let new_dir = current_dir + t.sin() * behavior.wander_angle_range;
+        let force = Vec2::new(new_dir.cos(), new_dir.sin()) * behavior.wander_force;
         velocity.vec += force;
     }
 }

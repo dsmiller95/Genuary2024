@@ -14,6 +14,7 @@ impl Plugin for BoidsSimPlugin {
                 avoidance_radius: AVOIDANCE_RADIUS,
                 avoidance_force: AVOIDANCE_FORCE,
                 wander_force: WANDER_FORCE,
+                wander_angle_range: WANDER_ANGLE_RADIANS,
                 wander_frequency: WANDER_FREQUENCY,
                 cohesion_radius: COHESION_RADIUS,
                 cohesion_force: COHESION_FORCE,

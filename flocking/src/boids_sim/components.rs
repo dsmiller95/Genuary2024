@@ -8,7 +8,10 @@ pub struct BoidBehavior {
     pub space_size: usize,
     pub avoidance_radius: f32,
     pub avoidance_force: f32,
+
     pub wander_force: f32,
+    // units are radians
+    pub wander_angle_range: f32,
     pub wander_frequency: f32,
 
     pub cohesion_radius: f32,

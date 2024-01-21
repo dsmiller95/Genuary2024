@@ -9,8 +9,9 @@ pub const BOID_SIZE: f32 = 10.0;
 
 pub const AVOIDANCE_RADIUS: f32 = 50.0;
 pub const AVOIDANCE_FORCE: f32 = 0.1;
-pub const WANDER_FORCE: f32 = 01.0;
+pub const WANDER_FORCE: f32 = 0.01;
+pub const WANDER_ANGLE_RADIANS: f32 = 0.01;
 pub const WANDER_FREQUENCY: f32 = 1.0;
 pub const COHESION_RADIUS: f32 = 10.0;
 pub const COHESION_FORCE: f32 = 0.001;
-pub const FRICTION_FORCE: f32 = 0.05;
+pub const FRICTION_FORCE: f32 = 0.01;
