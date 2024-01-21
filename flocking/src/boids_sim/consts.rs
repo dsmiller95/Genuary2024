@@ -8,4 +8,8 @@ pub const BOID_COLOR: Color = Color::rgb(0.3, 0.3, 0.7);
 pub const BOID_SIZE: f32 = 10.0;
 
 pub const AVOIDANCE_RADIUS: f32 = 1.0;
-pub const AVOIDANCE_FORCE: f32 = 0.001;
+pub const AVOIDANCE_FORCE: f32 = 0.0001;
+
+
+pub const WANDER_FORCE: f32 = 1.0;
+pub const WANDER_FREQUENCY: f32 = 2.0;

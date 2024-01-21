@@ -13,10 +13,16 @@ impl Plugin for BoidsSimPlugin {
                 space_size: SPACE_SIZE,
                 avoidance_radius: AVOIDANCE_RADIUS,
                 avoidance_force: AVOIDANCE_FORCE,
+                wander_force: WANDER_FORCE,
+                wander_frequency: WANDER_FREQUENCY,
             })
             .add_systems(Startup, (add_boids, add_rendering))
             .add_systems(Update, (
-                (apply_avoidance, add_velocity_to_position, set_pos_vel_to_transform).chain(),
+                (
+                    (apply_avoidance, apply_wander),
+                     add_velocity_to_position,
+                     set_pos_vel_to_transform
+                ).chain(),
                 print_positions)
             );
     }

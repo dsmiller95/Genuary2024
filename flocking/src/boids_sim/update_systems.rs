@@ -1,3 +1,4 @@
+use std::f32::consts::PI;
 use super::components::*;
 use super::prelude::*;
 
@@ -36,5 +37,14 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
         let force = (boid_a_pos.vec - boid_b_pos.vec) * force_mag;
         boid_a_vel.vec += force;
         boid_b_vel.vec -= force;
+    }
+}
+
+
+pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){
+    for (seed, mut velocity) in query.iter_mut() {
+        let t = (time.elapsed_seconds() * behavior.wander_frequency + seed.0) * PI * 2.0;
+        let force = Vec2::new((t * 3.0).cos(), (t * 5.0).sin()) * behavior.wander_force;
+        velocity.vec += force;
     }
 }

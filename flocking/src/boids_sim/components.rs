@@ -1,6 +1,5 @@
 use super::prelude::*;
 
-
 #[derive(Resource)]
 pub struct PrintTimer(pub Timer);
 
@@ -9,10 +8,15 @@ pub struct BoidBehavior {
     pub space_size: usize,
     pub avoidance_radius: f32,
     pub avoidance_force: f32,
+    pub wander_force: f32,
+    pub wander_frequency: f32,
 }
 
 #[derive(Component)]
 pub struct Boid;
+
+#[derive(Component)] // seed is between 0 and 1
+pub struct BoidSeed(pub f32);
 
 #[derive(Component, Debug)]
 pub struct Position {

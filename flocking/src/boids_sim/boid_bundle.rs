@@ -4,6 +4,7 @@ use crate::boids_sim::components::*;
 #[derive(Bundle)]
 pub struct BoidBundle{
     boid: Boid,
+    boid_seed: BoidSeed,
     position: Position,
     velocity: Velocity,
     sprite_bundle: SpriteBundle,
@@ -18,6 +19,7 @@ impl BoidBundle{
 
         Self{
             boid: Boid,
+            boid_seed: BoidSeed(rng.gen_range(0.0..1.0)),
             position: Position::new(x, y),
             velocity: Velocity::new(vx, vy),
             sprite_bundle: SpriteBundle{
