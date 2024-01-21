@@ -5,6 +5,6 @@ use boids_sim::app::*;
 
 fn main() {
     App::new()
-        .add_boids_app()
+        .add_plugins((DefaultPlugins, BoidsSimPlugin))
         .run();
 }

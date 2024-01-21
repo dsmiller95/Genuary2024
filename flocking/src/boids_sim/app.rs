@@ -2,15 +2,12 @@ use crate::boids_sim::components::*;
 use crate::boids_sim::update_systems::*;
 use super::prelude::*;
 
-pub trait CanAddBoids {
-    fn add_boids_app(&mut self) -> &mut App;
-}
-impl CanAddBoids for App {
-    fn add_boids_app(&mut self) -> &mut Self {
-        self
-            .add_plugins(DefaultPlugins)
+pub struct BoidsSimPlugin;
+impl Plugin for BoidsSimPlugin {
+    fn build(&self, app: &mut App) {
+        app
             .add_systems(Startup, add_boids)
-            .add_systems(Update, (hello_world, (add_velocity_to_position, print_positions).chain() ))
+            .add_systems(Update, (hello_world, (add_velocity_to_position, print_positions).chain() ));
     }
 }
 
