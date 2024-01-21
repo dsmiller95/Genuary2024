@@ -18,3 +18,9 @@ pub fn print_positions(time: Res<Time>, mut timer: ResMut<PrintTimer>, query: Qu
         println!("Position: {:?}", position);
     }
 }
+
+pub fn set_pos_vel_to_transform(mut query: Query<(&Position, &mut Transform)>) {
+    for (position, mut transform) in query.iter_mut() {
+        position.set_transform(&mut transform);
+    }
+}

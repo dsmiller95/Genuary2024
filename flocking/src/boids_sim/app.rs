@@ -1,3 +1,4 @@
+use crate::boids_sim::boid_bundle::BoidBundle;
 use crate::boids_sim::components::*;
 use crate::boids_sim::update_systems::*;
 use super::prelude::*;
@@ -8,14 +9,17 @@ impl Plugin for BoidsSimPlugin {
         app
             .insert_resource(PrintTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
             .add_systems(Startup, add_boids)
-            .add_systems(Update, ((add_velocity_to_position, print_positions).chain() ));
+            .add_systems(Update, (
+                (add_velocity_to_position, set_pos_vel_to_transform).chain(),
+                print_positions)
+            );
     }
 }
 
 fn add_boids(mut commands: Commands) {
     let mut rng = SmallRng::from_entropy();
     for _ in 0..BOID_N {
-        add_boid_to_world(&mut commands, &mut rng, SPACE_SIZE as f32, SPAWN_VEL);
+        commands.spawn(BoidBundle::new(&mut rng, SPACE_SIZE as f32, SPAWN_VEL));
     }
     println!("Added {} boids", BOID_N);
 }

@@ -21,6 +21,10 @@ impl Position {
         self.x += velocity.x * time.delta_seconds();
         self.y += velocity.y * time.delta_seconds();
     }
+    pub fn set_transform(&self, transform: &mut Transform) {
+        transform.translation.x = self.x;
+        transform.translation.y = self.y;
+    }
 }
 
 
