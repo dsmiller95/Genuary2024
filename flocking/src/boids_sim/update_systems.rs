@@ -11,6 +11,17 @@ pub fn add_velocity_to_position(
     }
 }
 
+pub fn apply_friction(
+    behavior: Res<BoidBehavior>,
+    time: Res<Time>,
+    mut query: Query<(&mut Velocity)>,
+) {
+    for mut velocity in query.iter_mut() {
+        let force = velocity.vec * behavior.friction_force;
+        velocity.vec -= force * time.delta_seconds();
+    }
+}
+
 pub fn print_positions(time: Res<Time>, mut timer: ResMut<PrintTimer>, query: Query<&Position, With<Boid>>) {
     if !timer.0.tick(time.delta()).just_finished() {
         return;
@@ -20,9 +31,10 @@ pub fn print_positions(time: Res<Time>, mut timer: ResMut<PrintTimer>, query: Qu
     }
 }
 
-pub fn set_pos_vel_to_transform(mut query: Query<(&Position, &mut Transform), With<Boid>>) {
-    for (position, mut transform) in query.iter_mut() {
+pub fn set_pos_vel_to_transform(mut query: Query<(&Position, &Velocity, &mut Transform), With<Boid>>) {
+    for (position, velocity, mut transform) in query.iter_mut() {
         position.set_transform(&mut transform);
+        transform.rotation = Quat::from_rotation_z(velocity.vec.y.atan2(velocity.vec.x));
     }
 }
 
@@ -30,7 +42,7 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
     let mut combinations = query.iter_combinations_mut();
     while let Some([(boid_a_pos, mut boid_a_vel), (boid_b_pos, mut boid_b_vel)]) = combinations.fetch_next() {
         let distance = boid_a_pos.vec.distance(boid_b_pos.vec);
-        if distance < behavior.avoidance_radius {
+        if distance > behavior.avoidance_radius {
             continue;
         }
         let force_mag = behavior.avoidance_force / distance;
@@ -39,6 +51,7 @@ pub fn apply_avoidance(behavior: Res<BoidBehavior>, mut query: Query<(&Position,
         boid_b_vel.vec -= force;
     }
 }
+
 
 
 pub fn apply_wander(behavior: Res<BoidBehavior>, time: Res<Time>, mut query: Query<(&BoidSeed, &mut Velocity), With<Boid>>){

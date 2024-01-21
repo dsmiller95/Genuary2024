@@ -10,6 +10,12 @@ pub struct BoidBehavior {
     pub avoidance_force: f32,
     pub wander_force: f32,
     pub wander_frequency: f32,
+
+    pub cohesion_radius: f32,
+    pub cohesion_force: f32,
+
+
+    pub friction_force: f32,
 }
 
 #[derive(Component)]

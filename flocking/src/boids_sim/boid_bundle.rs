@@ -26,7 +26,7 @@ impl BoidBundle{
                 transform: Transform::from_xyz(x, y, 0.0),
                 sprite: Sprite{
                     color: BOID_COLOR,
-                    custom_size: Some(Vec2::new(BOID_SIZE, BOID_SIZE)),
+                    custom_size: Some(Vec2::new(BOID_SIZE, BOID_SIZE/4.0)),
                     ..Default::default()
                 },
                 ..Default::default()

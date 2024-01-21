@@ -15,11 +15,15 @@ impl Plugin for BoidsSimPlugin {
                 avoidance_force: AVOIDANCE_FORCE,
                 wander_force: WANDER_FORCE,
                 wander_frequency: WANDER_FREQUENCY,
+                cohesion_radius: COHESION_RADIUS,
+                cohesion_force: COHESION_FORCE,
+                friction_force: FRICTION_FORCE,
             })
             .add_systems(Startup, (add_boids, add_rendering))
             .add_systems(Update, (
                 (
                     (apply_avoidance, apply_wander),
+                     apply_friction,
                      add_velocity_to_position,
                      set_pos_vel_to_transform
                 ).chain(),
