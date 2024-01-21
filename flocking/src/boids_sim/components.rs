@@ -4,38 +4,41 @@ use super::prelude::*;
 #[derive(Resource)]
 pub struct PrintTimer(pub Timer);
 
+#[derive(Resource)]
+pub struct BoidBehavior {
+    pub space_size: usize,
+    pub avoidance_radius: f32,
+    pub avoidance_force: f32,
+}
+
 #[derive(Component)]
 pub struct Boid;
 
 #[derive(Component, Debug)]
 pub struct Position {
-    x: f32,
-    y: f32,
+    pub vec: Vec2,
 }
 
 impl Position {
     pub fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
+        Self { vec: Vec2::new(x, y) }
     }
     pub fn add_velocity(&mut self, velocity: &Velocity, time: &Time) {
-        self.x += velocity.x * time.delta_seconds();
-        self.y += velocity.y * time.delta_seconds();
+        self.vec += velocity.vec * time.delta_seconds();
     }
     pub fn set_transform(&self, transform: &mut Transform) {
-        transform.translation.x = self.x;
-        transform.translation.y = self.y;
+        transform.translation.x = self.vec.x;
+        transform.translation.y = self.vec.y;
     }
 }
 
-
 #[derive(Component, Debug)]
 pub struct Velocity {
-    x: f32,
-    y: f32,
+    pub vec: Vec2,
 }
 
 impl Velocity {
     pub fn new(x: f32, y: f32) -> Self {
-        Self { x, y }
+        Self {vec: Vec2::new(x, y) }
     }
 }

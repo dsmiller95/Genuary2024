@@ -9,9 +9,14 @@ impl Plugin for BoidsSimPlugin {
         app
             .insert_resource(PrintTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
             .insert_resource(ClearColor(BACKGROUND_COLOR))
+            .insert_resource(BoidBehavior {
+                space_size: SPACE_SIZE,
+                avoidance_radius: AVOIDANCE_RADIUS,
+                avoidance_force: AVOIDANCE_FORCE,
+            })
             .add_systems(Startup, (add_boids, add_rendering))
             .add_systems(Update, (
-                (add_velocity_to_position, set_pos_vel_to_transform).chain(),
+                (apply_avoidance, add_velocity_to_position, set_pos_vel_to_transform).chain(),
                 print_positions)
             );
     }
