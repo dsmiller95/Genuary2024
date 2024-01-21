@@ -8,12 +8,17 @@ impl Plugin for BoidsSimPlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(PrintTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
-            .add_systems(Startup, add_boids)
+            .insert_resource(ClearColor(BACKGROUND_COLOR))
+            .add_systems(Startup, (add_boids, add_rendering))
             .add_systems(Update, (
                 (add_velocity_to_position, set_pos_vel_to_transform).chain(),
                 print_positions)
             );
     }
+}
+
+fn add_rendering(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
 }
 
 fn add_boids(mut commands: Commands) {
@@ -22,13 +27,4 @@ fn add_boids(mut commands: Commands) {
         commands.spawn(BoidBundle::new(&mut rng, SPACE_SIZE as f32, SPAWN_VEL));
     }
     println!("Added {} boids", BOID_N);
-}
-
-fn add_boid_to_world(commands: &mut Commands, rng: &mut SmallRng, pos_max: f32, vel_max: f32) {
-    let x = rng.gen_range(-pos_max..pos_max);
-    let y = rng.gen_range(-pos_max..pos_max);
-    let vx = rng.gen_range(-vel_max..vel_max);
-    let vy = rng.gen_range(-vel_max..vel_max);
-
-    commands.spawn((Boid, Position::new(x, y), Velocity::new(vx, vy)));
 }
