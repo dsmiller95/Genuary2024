@@ -1,17 +1,17 @@
 use std::convert::Into;
-use std::f64::consts::PI;
 use std::ops::Range;
-use turtle::{Color, Drawing, Turtle};
+use rand::Rng;
+use turtle::{Color, Drawing};
 
-const DEGREES_PER_TRACE: f64 = PI;
+const DEGREES_PER_TRACE: f64 = 1.0;
 const CIRCLE_RADIUS: f64 = 200.0;
 const SEGMENT_DISTANCE: f64 = 30.0;
 
-const PALLETE: [&str; 5] = ["#2e382e","#50c9ce","#72a1e5","#9883e5","#fcd3de"];
-
 fn main() {
+    let palette = generate_palette(DEGREES_PER_TRACE, 5);
+
     let mut drawing = Drawing::new();
-    drawing.set_background_color(PALLETE[0]);
+    drawing.set_background_color(palette[0].darken(0.1));
     let mut turtle = drawing.add_turtle();
     turtle.set_speed(25);
     turtle.set_pen_size(2.0);
@@ -24,7 +24,8 @@ fn main() {
     let valid_angles = 0.0..180.0;
     let step =  DEGREES_PER_TRACE / (valid_angles.end - valid_angles.start);
     let mut t = 0.0;
-    loop{
+    let total_steps = (2.0 / step) as usize;
+    for _ in 0..total_steps {
         let angle = ping_pong(t, &valid_angles).to_radians();
         let distance_to_circle= CIRCLE_RADIUS * 2.0 * (angle/1.75).sin();
 
@@ -45,9 +46,41 @@ fn main() {
 
 
         turtle.right(angle/2.0);
-        turtle.set_pen_color(lerp_color(t * 3.0f64.sqrt(), &PALLETE[1..]));
+        turtle.set_pen_color(lerp_color(t * 3.0f64.sqrt(), &palette[1..]));
         t += step;
     }
+
+    turtle.pen_up();
+    loop{
+        let offset = -CIRCLE_RADIUS * 2.0;
+        turtle.go_to((offset, offset));
+        turtle.go_to((offset, offset + -1.0));
+    }
+}
+use rand_chacha::ChaChaRng;
+use rand_chacha::rand_core::SeedableRng;
+use colourado_iter::{ColorPalette, PaletteType};
+fn generate_palette(rand_seed: f64, len: usize) -> Vec<Color> {
+    let mut rng = ChaChaRng::seed_from_u64(rand_seed.to_bits());
+    rng.gen_range(0.0..1.0);
+    rng.gen_range(0.0..1.0);
+    rng.gen_range(0.0..1.0);
+    rng.gen_range(0.0..1.0);
+
+    let palette = ColorPalette::new(PaletteType::Random, false, &mut rng);
+
+    palette
+        .take(len)
+        .map(|color| {
+            let (r, g, b) = color.to_tuple().into();
+            Color{
+                red: r as f64 * 255.0,
+                green: g as f64* 255.0,
+                blue: b as f64* 255.0,
+                alpha: 1.0,
+            }
+        })
+        .collect()
 }
 
 /// Returns a value between min and max, that oscillates back and forth
@@ -64,15 +97,15 @@ fn ping_pong(t: f64, out_range: &Range<f64>) -> f64 {
     return normalized_res * (out_range.end - out_range.start) + out_range.start;
 }
 
-fn lerp_color(t: f64, pallet_slice: &[&str]) -> Color {
+fn lerp_color(t: f64, pallet_slice: &[Color]) -> Color {
 
     let t = (t % 1.0) * pallet_slice.len() as f64;
     let color_index_1 = t.floor() as usize;
     let color_index_2 = (color_index_1 + 1) % pallet_slice.len();
     let t = t - t.floor();
 
-    let color_1: Color = pallet_slice[color_index_1].into();
-    let color_2: Color = pallet_slice[color_index_2].into();
+    let color_1 = pallet_slice[color_index_1];
+    let color_2 = pallet_slice[color_index_2];
 
     color_1.lerp(color_2, t)
 }
