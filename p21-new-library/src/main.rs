@@ -1,9 +1,10 @@
 use std::convert::Into;
+use std::f64::consts::{E, PI};
 use std::ops::Range;
 use rand::Rng;
 use turtle::{Color, Drawing};
 
-const DEGREES_PER_TRACE: f64 = 1.0;
+const DEGREES_PER_TRACE: f64 = 4.0;
 const CIRCLE_RADIUS: f64 = 200.0;
 const SEGMENT_DISTANCE: f64 = 30.0;
 
@@ -24,7 +25,7 @@ fn main() {
     let valid_angles = 0.0..180.0;
     let step =  DEGREES_PER_TRACE / (valid_angles.end - valid_angles.start);
     let mut t = 0.0;
-    let total_steps = (2.0 / step) as usize;
+    let total_steps = 180 * 2;
     for _ in 0..total_steps {
         let angle = ping_pong(t, &valid_angles).to_radians();
         let distance_to_circle= CIRCLE_RADIUS * 2.0 * (angle/1.75).sin();
