@@ -31,8 +31,6 @@ pub fn organ_production(
             },
             ParentRetarget::Unchanged => {}
         }
-
-        println!("{:?}", organ)
     }
 
     match parent_retarget_res.parent_retargets {

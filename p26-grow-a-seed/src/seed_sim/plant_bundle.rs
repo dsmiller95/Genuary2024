@@ -13,7 +13,7 @@ impl OrganBundle {
     pub fn new(rng: &mut SmallRng, pos_max: f32) -> Self {
         let x = rng.gen_range(-pos_max..pos_max);
         let y = rng.gen_range(-pos_max..pos_max);
-        let mut timer = Timer::from_seconds(1.0, TimerMode::Repeating);
+        let mut timer = Timer::from_seconds(GROWTH_DELAY, TimerMode::Repeating);
         timer.tick(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
         Self {
             organ: EntityOrgan{
@@ -38,7 +38,7 @@ impl OrganBundle {
             organ: EntityOrgan{ organ, },
             organ_relations: OrganRelations{ parent },
             spawn_status: SpawnStatus(SpawnedTime::ThisFrame),
-            seed_timer: SeedTimer(Timer::from_seconds(1.0, TimerMode::Repeating)),
+            seed_timer: SeedTimer(Timer::from_seconds(GROWTH_DELAY, TimerMode::Repeating)),
             sprite_bundle: SpriteBundle {
                 transform,
                 sprite: Sprite {

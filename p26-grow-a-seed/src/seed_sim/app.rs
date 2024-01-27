@@ -33,7 +33,7 @@ impl Plugin for PlantSimPlugin {
             )
             .add_systems(Update, update_spawn_status_end_frame)
             .add_systems(Update, propagate_custom_transforms)
-            .add_systems(Update, print_parent_relationships)
+            //.add_systems(Update, print_parent_relationships)
         ;
     }
 }

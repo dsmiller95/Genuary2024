@@ -25,6 +25,7 @@ pub enum SpawnedTime{
 #[derive(Debug, Clone)]
 pub enum Organ{
     Stem(Stem),
+    Crook{angle: f32},
     Leaf,
     Flower,
     Fruit,
