@@ -4,7 +4,7 @@ use std::ops::Range;
 use rand::Rng;
 use turtle::{Color, Drawing};
 
-const DEGREES_PER_TRACE: f64 = 4.0;
+const DEGREES_PER_TRACE: f64 = 2.0;
 const CIRCLE_RADIUS: f64 = 200.0;
 const SEGMENT_DISTANCE: f64 = 30.0;
 
