@@ -3,7 +3,6 @@ mod seed_sim;
 use bevy::app::{App, Startup};
 use bevy::DefaultPlugins;
 use bevy::prelude::*;
-use bevy::prelude::{MonitorSelection, Query, Window};
 use crate::seed_sim::app::PlantSimPlugin;
 
 fn main() {
