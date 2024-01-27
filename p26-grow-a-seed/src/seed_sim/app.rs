@@ -1,7 +1,7 @@
 
 use bevy::app::{App, Plugin, Startup, Update};
-use crate::seed_sim::organ_parent_transform_propigation::propagate_custom_transforms;
-use crate::seed_sim::parent_retargeting::{OrganParentRetargetingResources, parent_retargeting, print_parent_relationships, PrintTimer, update_spawn_status_end_frame};
+use crate::seed_sim::organ_parent_transform_propigation::{propagate_custom_transforms_inplace};
+use crate::seed_sim::parent_retargeting::{OrganParentRetargetingResources, parent_retargeting, PrintTimer, update_spawn_status_end_frame};
 use crate::seed_sim::system_updates::{organ_production};
 use crate::seed_sim::plant_bundle::{OrganBundle};
 use crate::seed_sim::plant_organs_resources::{OrganResources, StemBundle};
@@ -32,7 +32,7 @@ impl Plugin for PlantSimPlugin {
                 .before(update_spawn_status_end_frame)
             )
             .add_systems(Update, update_spawn_status_end_frame)
-            .add_systems(Update, propagate_custom_transforms)
+            .add_systems(Update, propagate_custom_transforms_inplace)
             //.add_systems(Update, print_parent_relationships)
         ;
     }
