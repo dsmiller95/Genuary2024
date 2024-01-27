@@ -23,7 +23,7 @@ impl OrganBundle {
             spawn_status: SpawnStatus(SpawnedTime::ThisFrame),
             seed_timer: SeedTimer(timer),
             sprite_bundle: SpriteBundle {
-                transform: Transform::from_xyz(x, y, 0.0),
+                transform: Transform::from_xyz(x, y, 0.0).with_scale(Vec3::new(5.0, 10.0, 5.0)),
                 sprite: Sprite {
                     color: Color::rgb(0.0, 1.0, 0.0),
                     ..Default::default()

@@ -55,9 +55,7 @@ impl Organ{
     pub fn get_transformation(&self) -> Transform{
         match self{
             Organ::Stem(stem) => {
-                let scale = Vec3::new(1.0, stem.length, 1.0);
-                Transform::from_scale(scale)
-                    .with_translation(Vec3::new(0.0, stem.length / 2.0, 0.0))
+                Transform::from_xyz(0.0, stem.length/10.0, 0.0)
             },
             Organ::Leaf => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
             Organ::Flower => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
