@@ -21,7 +21,6 @@ pub fn parent_retargeting(
     };
 
     retarget_list.sort_by_key(|a| a.from);
-    println!("Retarget list: {:?}", retarget_list);
 
     for (_, spawn_status, mut organ_relations) in query.iter_mut() {
         match spawn_status.0 {
