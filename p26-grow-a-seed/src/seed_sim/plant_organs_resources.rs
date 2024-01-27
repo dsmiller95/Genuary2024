@@ -1,7 +1,11 @@
 use crate::seed_sim::prelude::*;
 
-#[derive(Resource)]
-pub struct StemResource{
-    pub sprite : Sprite,
-    pub texture: Handle<Image>,
+#[derive(Resource, Clone)]
+pub struct OrganResources {
+    pub stem_bundle : StemBundle,
+}
+
+#[derive(Bundle, Clone)]
+pub struct StemBundle {
+    pub sprite_bundle: SpriteBundle,
 }

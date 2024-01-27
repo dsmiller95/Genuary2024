@@ -1,5 +1,5 @@
 mod seed_components;
-mod grow_system;
+mod system_updates;
 mod prelude;
 mod plant_bundle;
 mod consts;

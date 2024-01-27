@@ -1,5 +1,5 @@
-use crate::seed_sim::consts::MAX_STEM_LENGTH;
-use crate::seed_sim::prelude::{Organ, Stem};
+use crate::seed_sim::plant_organs_resources::OrganResources;
+use crate::seed_sim::prelude::*;
 
 impl Organ{
     pub fn get_generated_organs(&self) -> impl Iterator<Item=Organ>{
@@ -51,4 +51,39 @@ impl Organ{
         };
         production.into_iter()
     }
+
+    pub fn get_transformation(&self) -> Transform{
+        match self{
+            Organ::Stem(stem) => {
+                let scale = Vec3::new(1.0, stem.length, 1.0);
+                Transform::from_scale(scale)
+                    .with_translation(Vec3::new(0.0, stem.length / 2.0, 0.0))
+            },
+            Organ::Leaf => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
+            Organ::Flower => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
+            Organ::Fruit => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
+            Organ::Root => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
+        }
+    }
+
+    pub fn render_single(&self, origin: Transform, organ_resources: &OrganResources, commands: &mut Commands) {
+        let organ_transform = self.get_transformation();
+        let transform = origin.mul_transform(organ_transform);
+        let color = match self{
+            Organ::Stem(stem) => {
+                let green = stem.length / MAX_STEM_LENGTH;
+                Color::rgb(0.0, green, 0.0)
+            }
+            Organ::Leaf => Color::rgb(0.0, 1.0, 0.0),
+            Organ::Flower => Color::rgb(1.0, 0.0, 0.0),
+            Organ::Fruit => Color::rgb(1.0, 0.0, 1.0),
+            Organ::Root => Color::rgb(0.0, 0.0, 1.0),
+        };
+
+        let mut bundle = organ_resources.stem_bundle.clone();
+        bundle.sprite_bundle.transform = transform;
+        bundle.sprite_bundle.sprite.color = color;
+        commands.spawn(bundle);
+    }
+
 }

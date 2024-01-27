@@ -1,7 +1,8 @@
 
 use bevy::app::{App, Plugin, Startup, Update};
-use crate::seed_sim::grow_system::grow_seed;
+use crate::seed_sim::system_updates::{grow_seed, render_seed};
 use crate::seed_sim::plant_bundle::PlantBundle;
+use crate::seed_sim::plant_organs_resources::{OrganResources, StemBundle};
 use crate::seed_sim::prelude::*;
 
 
@@ -10,8 +11,16 @@ impl Plugin for PlantSimPlugin {
     fn build(&self, app: &mut App) {
         app
             .insert_resource(ClearColor(Color::rgb(0.9, 0.9, 0.9)))
+            .insert_resource(OrganResources {
+                stem_bundle: StemBundle {
+                    sprite_bundle: SpriteBundle {
+                        transform: Transform::from_scale(Vec3::new(0.1, 0.1, 1.0)),
+                        ..Default::default()
+                    },
+                },
+            })
             .add_systems(Startup, (add_rendering, add_seeds))
-            .add_systems(Update, grow_seed)
+            .add_systems(Update, (grow_seed, render_seed).chain())
         ;
     }
 }
