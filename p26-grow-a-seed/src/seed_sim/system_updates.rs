@@ -47,6 +47,8 @@ fn spawn_organs(
     spawned_organs: Vec<SpawnedOrgan>,
     origin: Transform,
     commands: &mut Commands) -> Vec<Entity> {
+
+    let mut random = thread_rng();
     let mut spawned_organ_entities = Vec::with_capacity(spawned_organs.len());
     for spawned_organ in spawned_organs {
         let parent_entity = match spawned_organ.parent {
@@ -61,7 +63,7 @@ fn spawn_organs(
             },
             None => None,
         };
-        let bundle = OrganBundle::new_from_organ(spawned_organ.organ, parent_entity, origin);
+        let bundle = OrganBundle::new_from_organ(spawned_organ.organ, parent_entity, origin, &mut random);
         let entity = commands.spawn(bundle).id();
         spawned_organ_entities.push(entity);
     }

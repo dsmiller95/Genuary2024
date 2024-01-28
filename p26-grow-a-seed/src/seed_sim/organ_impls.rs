@@ -10,10 +10,23 @@ impl Organ{
             Organ::Crook { angle } => {
                 Transform::from_rotation(Quat::from_rotation_z(*angle))
             },
-            Organ::Leaf => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
-            Organ::Flower => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
-            Organ::Fruit => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
-            Organ::Root => Transform::from_scale(Vec3::new(1.0, 1.0, 1.0)),
+            Organ::Leaf => Transform::IDENTITY,
+            Organ::Flower => Transform::IDENTITY,
+            Organ::Fruit => Transform::IDENTITY,
+            Organ::Root => Transform::IDENTITY,
+        }
+    }
+
+    pub fn get_local_transformation(&self) -> Transform{
+        match self{
+            Organ::Stem(stem) => {
+                Transform::from_scale(Vec3::new(1.0, stem.length/5.0, 1.0))
+            },
+            Organ::Crook{..} => Transform::IDENTITY,
+            Organ::Leaf => Transform::IDENTITY,
+            Organ::Flower => Transform::IDENTITY,
+            Organ::Fruit => Transform::IDENTITY,
+            Organ::Root => Transform::IDENTITY,
         }
     }
 }
