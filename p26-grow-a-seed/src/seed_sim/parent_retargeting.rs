@@ -46,13 +46,13 @@ pub struct PrintTimer(pub Timer);
 pub fn print_parent_relationships(
     time: Res<Time>,
     mut timer: ResMut<PrintTimer>,
-    query: Query<(Entity, &SpawnStatus, &OrganRelations)>)
+    query: Query<(Entity, &SpawnStatus, &OrganRelations, &EntityOrgan, &Transform)>)
 {
     if !timer.0.tick(time.delta()).just_finished() {
         return;
     }
-    for (self_entity, spawned, organ_relations) in query.iter() {
-        println!("{:?} -> {:?}\t{:?}", self_entity, organ_relations.parent, spawned.0);
+    for (self_entity, spawned, organ_relations, organ, transform) in query.iter() {
+        println!("{:?} -> {:?}\t{:?}\t{:?}\t{:?}", self_entity, organ_relations.parent, spawned.0, organ.organ, transform);
     }
 }
 

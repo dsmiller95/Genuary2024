@@ -4,6 +4,7 @@ use crate::seed_sim::prelude::*;
 impl Organ{
     pub fn get_transformation(&self) -> Transform{
         match self{
+            Organ::Seed => Transform::IDENTITY,
             Organ::Stem(stem) => {
                 Transform::from_xyz(0.0, stem.length/5.0, 0.0)
             },
@@ -13,12 +14,16 @@ impl Organ{
             Organ::Leaf => Transform::IDENTITY,
             Organ::Flower => Transform::IDENTITY,
             Organ::Fruit => Transform::IDENTITY,
-            Organ::Root => Transform::IDENTITY,
+            Organ::Root { rotation } => {
+                Transform::from_rotation(Quat::from_rotation_z(*rotation))
+            },
+            Organ::Origin => Transform::IDENTITY,
         }
     }
 
     pub fn get_local_transformation(&self) -> Transform{
         match self{
+            Organ::Seed => Transform::IDENTITY,
             Organ::Stem(stem) => {
                 Transform::from_scale(Vec3::new(1.0, stem.length/5.0, 1.0))
             },
@@ -26,7 +31,8 @@ impl Organ{
             Organ::Leaf => Transform::IDENTITY,
             Organ::Flower => Transform::IDENTITY,
             Organ::Fruit => Transform::IDENTITY,
-            Organ::Root => Transform::IDENTITY,
+            Organ::Root{..} => Transform::IDENTITY,
+            Organ::Origin => Transform::IDENTITY,
         }
     }
 }
@@ -50,6 +56,20 @@ pub enum ParentRetarget {
 impl Organ {
     pub fn get_generated_organ_commands(&mut self, self_entity: Entity) -> (Vec<SpawnedOrgan>, ParentRetarget) {
         return match self {
+            Organ::Seed => {
+                *self = Organ::Origin;
+                let spawned = vec![
+                    SpawnedOrgan{
+                        organ: Organ::Root{rotation: 0.0 },
+                        parent: Some(GeneratedEntityReference::External(self_entity)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::Stem(Stem { length: 0.0 }),
+                        parent: Some(GeneratedEntityReference::Internal(0)),
+                    },
+                ];
+                (spawned, ParentRetarget::Changed(GeneratedEntityReference::Internal(1)))
+            }
             Organ::Stem(ref mut stem) => {
                 enum GrowthState{
                     FullyGrown, Growing
@@ -105,6 +125,10 @@ impl Organ {
                     (GrowthState::FullyGrown, GrowthState::Growing) =>
                         panic!("Cannot transition from fully grown to growing")
                 }
+            },
+            Organ::Root{ref mut rotation} => {
+                *rotation += 0.01;
+                (vec![], ParentRetarget::Unchanged)
             },
             _ => (vec![], ParentRetarget::Unchanged),
         }

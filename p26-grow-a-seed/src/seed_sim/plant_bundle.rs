@@ -21,7 +21,7 @@ impl OrganBundle {
         timer.tick(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
         Self {
             organ: EntityOrgan{
-                organ: Organ::Stem(Stem { length: 0.0 }),
+                organ: Organ::Seed,
             },
             organ_relations: OrganRelations{ parent: None },
             spawn_status: SpawnStatus(SpawnedTime::ThisFrame),

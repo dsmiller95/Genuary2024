@@ -29,7 +29,9 @@ pub enum Organ{
     Leaf,
     Flower,
     Fruit,
-    Root,
+    Root{rotation: f32},
+    Origin,
+    Seed,
 }
 
 #[derive(Debug, Clone)]
