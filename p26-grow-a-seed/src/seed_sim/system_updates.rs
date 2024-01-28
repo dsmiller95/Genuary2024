@@ -70,3 +70,25 @@ fn spawn_organs(
 
     spawned_organ_entities
 }
+
+
+pub fn enforce_maximum_entity_count(
+    query: Query<(Entity), (With<EntityOrgan>)>,
+    mut commands: Commands
+){
+    let count = query.iter().count();
+    if count <= MAXIMUM_ENTITY_COUNT {return};
+    let excess_amount = count - MAXIMUM_ENTITY_COUNT;
+
+    let _span = info_span!("enforce_maximum_entity_count", name="enforce_maximum_entity_count", num=count).entered();
+    let percent_reduction_x100 = (100.0 * excess_amount as f32 / count as f32) as u32;
+    info!("Excess entity count: {} ({}%)", excess_amount, percent_reduction_x100);
+
+
+    let mut random = thread_rng();
+    for (entity) in query.iter() {
+        if random.gen_range(0..100) <= percent_reduction_x100 {
+            commands.entity(entity).despawn();
+        }
+    }
+}

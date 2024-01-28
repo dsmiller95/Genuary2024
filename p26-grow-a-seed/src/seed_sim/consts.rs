@@ -1,5 +1,6 @@
 
-pub const SEED_N: usize = 10;
+pub const SEED_N: usize = 1;
+pub const MAXIMUM_ENTITY_COUNT: usize = 500_000;
 
 pub const SPACE_SIZE: usize = 500;
 
