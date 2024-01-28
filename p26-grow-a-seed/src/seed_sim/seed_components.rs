@@ -9,6 +9,9 @@ pub struct EntityOrgan{
     pub organ: Organ,
 }
 
+#[derive(Component, Debug, Clone)]
+pub struct OrganLifespan{pub remaining: Timer}
+
 #[derive(Component, Debug)]
 pub struct OrganRelations{
     pub parent: Option<Entity>

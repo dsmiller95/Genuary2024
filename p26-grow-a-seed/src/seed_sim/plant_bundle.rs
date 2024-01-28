@@ -3,11 +3,14 @@ use super::prelude::*;
 
 const MIN_GROWTH_TIME: f32 = GROWTH_DELAY * (1.0-GROWTH_JITTER_FACTOR);
 const MAX_GROWTH_TIME: f32 = GROWTH_DELAY * (1.0+GROWTH_JITTER_FACTOR);
+const MIN_LIFESPAN: f32 = INITIAL_LIFESPAN_SECONDS * (1.0-LIFESPAN_JITTER);
+const MAX_LIFESPAN: f32 = INITIAL_LIFESPAN_SECONDS * (1.0+LIFESPAN_JITTER);
 
 #[derive(Bundle)]
 pub struct OrganBundle{
     sprite_bundle: SpriteBundle,
     organ: EntityOrgan,
+    lifespan: OrganLifespan,
     organ_relations: OrganRelations,
     spawn_status: SpawnStatus,
     seed_timer: SeedTimer,
@@ -19,10 +22,16 @@ impl OrganBundle {
         let adjusted_delay = rng.gen_range(MIN_GROWTH_TIME..MAX_GROWTH_TIME);
         let mut timer = Timer::from_seconds(adjusted_delay, TimerMode::Repeating);
         timer.tick(Duration::from_secs_f32(rng.gen_range(0.0..1.0)));
+
+        let adjusted_lifespan = rng.gen_range(MIN_LIFESPAN..MAX_LIFESPAN);
+        let lifespan = OrganLifespan{
+            remaining: Timer::from_seconds(adjusted_lifespan, TimerMode::Once),
+        };
         Self {
             organ: EntityOrgan{
                 organ: Organ::Seed,
             },
+            lifespan,
             organ_relations: OrganRelations{ parent: None },
             spawn_status: SpawnStatus(SpawnedTime::ThisFrame),
             seed_timer: SeedTimer(timer),
@@ -37,10 +46,16 @@ impl OrganBundle {
         }
     }
 
-    pub fn new_from_organ(organ: Organ, parent: Option<Entity>, transform: Transform, rng: &mut impl Rng) -> Self {
+    pub fn new_from_organ(
+        organ: Organ,
+        parent: Option<Entity>,
+        lifespan: OrganLifespan,
+        transform: Transform,
+        rng: &mut impl Rng) -> Self {
         let adjusted_delay = rng.gen_range(MIN_GROWTH_TIME..MAX_GROWTH_TIME);
         Self {
             organ: EntityOrgan{ organ, },
+            lifespan,
             organ_relations: OrganRelations{ parent },
             spawn_status: SpawnStatus(SpawnedTime::ThisFrame),
             seed_timer: SeedTimer(Timer::from_seconds(adjusted_delay, TimerMode::Repeating)),

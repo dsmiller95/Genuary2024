@@ -2,6 +2,9 @@
 pub const SEED_N: usize = 10;
 pub const MAXIMUM_ENTITY_COUNT: usize = 500_000;
 
+pub const INITIAL_LIFESPAN_SECONDS: f32 = 10.0;
+pub const LIFESPAN_JITTER: f32 = 0.25;
+
 pub const SPACE_SIZE: usize = 500;
 
 pub const MAX_STEM_LENGTH: f32 = 10.0;
