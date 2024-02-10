@@ -8,3 +8,4 @@ mod plant_organs_resources;
 mod organ_impls;
 mod parent_retargeting;
 mod organ_parent_transform_propigation;
+mod stem_organ;

@@ -29,6 +29,7 @@ pub enum SpawnedTime{
 #[derive(Debug, Clone, PartialEq)]
 pub enum Organ{
     Stem(Stem),
+    //EventualBranch{ time_till_branch: f32},
     Crook{angle: f32},
     Leaf,
     Flower,
@@ -78,6 +79,7 @@ impl ApproxEq for &Organ {
             (Organ::Root{rotation: a}, Organ::Root{rotation: b}) => a.approx_eq(*b, margin),
             (Organ::Origin, Organ::Origin) => true,
             (Organ::Seed, Organ::Seed) => true,
+            //(Organ::EventualBranch{time_till_branch: a}, Organ::EventualBranch{time_till_branch: b}) => a.approx_eq(*b, margin),
             _ => false
         }
     }
