@@ -54,12 +54,31 @@ impl Default for Stem {
     }
 }
 
-impl ApproxEq for Stem {
-    type Margin = f32;
+impl ApproxEq for &Stem {
+    type Margin = <f32 as ApproxEq>::Margin;
 
     fn approx_eq<T: Into<Self::Margin>>(self, other: Self, margin: T) -> bool {
         let margin = margin.into();
         self.partial_length.approx_eq(other.partial_length, margin)
-            && self.generated_segments.eq(other.generated_segments)
+            && self.generated_segments.eq(&other.generated_segments)
+    }
+}
+
+impl ApproxEq for &Organ {
+    type Margin = <f32 as ApproxEq>::Margin;
+
+    fn approx_eq<M: Into<Self::Margin>>(self, other: Self, margin: M) -> bool {
+        match (self, other) {
+            (Organ::Stem(a), Organ::Stem(b)) => a.approx_eq(b, margin),
+            (Organ::Crook{angle: a}, Organ::Crook{angle: b}) => a.approx_eq(*b, margin),
+            (Organ::Leaf, Organ::Leaf) => true,
+            (Organ::Flower, Organ::Flower) => true,
+            (Organ::Fruit, Organ::Fruit) => true,
+            (Organ::StemSeg, Organ::StemSeg) => true,
+            (Organ::Root{rotation: a}, Organ::Root{rotation: b}) => a.approx_eq(*b, margin),
+            (Organ::Origin, Organ::Origin) => true,
+            (Organ::Seed, Organ::Seed) => true,
+            _ => false
+        }
     }
 }
