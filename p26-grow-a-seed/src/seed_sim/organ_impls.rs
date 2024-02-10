@@ -18,6 +18,7 @@ impl Organ{
             },
             Organ::Origin => Transform::IDENTITY,
             Organ::StemSeg => Transform::from_xyz(0.0, SEGMENT_LEN, 0.0),
+            Organ::EventualBranch{..} => Transform::IDENTITY,
         }
     }
 
@@ -33,7 +34,8 @@ impl Organ{
             Organ::Fruit => Transform::IDENTITY,
             Organ::Root{..} => Transform::IDENTITY,
             Organ::Origin => Transform::IDENTITY,
-            Organ::StemSeg => Transform::IDENTITY
+            Organ::StemSeg => Transform::IDENTITY,
+            Organ::EventualBranch{..} => Transform::IDENTITY,
         }
     }
 }
@@ -90,7 +92,7 @@ impl Organ {
                         parent: Some(GeneratedEntityReference::External(self_entity)),
                     },
                     SpawnedOrgan{
-                        organ: Organ::Stem(Default::default()),
+                        organ: Organ::EventualBranch{ steps_till_branch: 0 },
                         parent: Some(GeneratedEntityReference::Internal(0)),
                     },
                 ];
@@ -109,6 +111,44 @@ impl Organ {
             },
             Organ::Root{ref mut rotation} => {
                 *rotation += 0.01;
+                Default::default()
+            },
+            Organ::EventualBranch { steps_till_branch: 0 } => {
+                *self = Organ::Flower;
+                let spawned = vec![
+                    SpawnedOrgan{
+                        organ: Organ::Crook{ angle: 0.5 },
+                        parent: Some(GeneratedEntityReference::External(self_entity)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::Crook{ angle: -0.5 },
+                        parent: Some(GeneratedEntityReference::External(self_entity)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::Stem(Default::default()),
+                        parent: Some(GeneratedEntityReference::Internal(0)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::Stem(Default::default()),
+                        parent: Some(GeneratedEntityReference::Internal(1)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::EventualBranch{ steps_till_branch: consts.steps_till_eventual_branch },
+                        parent: Some(GeneratedEntityReference::Internal(2)),
+                    },
+                    SpawnedOrgan{
+                        organ: Organ::EventualBranch{ steps_till_branch: consts.steps_till_eventual_branch },
+                        parent: Some(GeneratedEntityReference::Internal(3)),
+                    },
+                ];
+                GenerationResult {
+                    spawned,
+                    children_point_to: ParentRetarget::Changed(GeneratedEntityReference::Internal(4)),
+                    parent_point_to: ParentRetarget::Unchanged,
+                }
+            },
+            Organ::EventualBranch { steps_till_branch } => {
+                *steps_till_branch -= 1;
                 Default::default()
             },
             _ => default(),

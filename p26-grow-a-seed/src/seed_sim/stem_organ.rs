@@ -31,42 +31,9 @@ impl Stem {
         let growth_increment = consts.stem_growth_per_step;
         let growth_result = self.extend_up_to_max(growth_increment, consts.max_stem_length, consts.segment_len);
 
-        // if we didn't grow, then we have completed our lifecycle, and replace ourselves.
+        // if we didn't grow, then we have completed our lifecycle, and noop.
         if !growth_result.did_grow {
-            let spawned = vec![
-                SpawnedOrgan{
-                    organ: Organ::Crook{ angle: 0.5 },
-                    parent: Some(GeneratedEntityReference::External(self_entity)),
-                },
-                SpawnedOrgan{
-                    organ: Organ::Crook{ angle: -0.5 },
-                    parent: Some(GeneratedEntityReference::External(self_entity)),
-                },
-                SpawnedOrgan{
-                    organ: Organ::Stem(Default::default()),
-                    parent: Some(GeneratedEntityReference::Internal(0)),
-                },
-                SpawnedOrgan{
-                    organ: Organ::Stem(Default::default()),
-                    parent: Some(GeneratedEntityReference::Internal(1)),
-                },
-                SpawnedOrgan{
-                    organ: Organ::Crook{ angle: -PI / 2.0 },
-                    parent: Some(GeneratedEntityReference::External(self_entity)),
-                },
-                SpawnedOrgan{
-                    organ: Organ::Leaf,
-                    parent: Some(GeneratedEntityReference::Internal(4)),
-                },
-            ];
-            return (
-                Some(Organ::StemSeg),
-                GenerationResult {
-                    spawned,
-                    children_point_to: ParentRetarget::Changed(GeneratedEntityReference::Internal(1)),
-                    parent_point_to: ParentRetarget::Unchanged,
-                }
-            );
+            return Default::default();
         }
 
         if growth_result.new_segments <= 0 {
