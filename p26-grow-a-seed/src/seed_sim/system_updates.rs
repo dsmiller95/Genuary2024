@@ -25,12 +25,13 @@ pub fn organ_production(
 {
     let consts: OrganGenerationConsts =  Default::default();
     let mut parent_retargets = Vec::new();
+    let mut rng = SmallRng::from_entropy();
     for (self_entity, mut organ, mut timer, lifespan, mut relations, transform) in query.iter_mut() {
         if !timer.0.tick(time.delta()).just_finished() {
             continue;
         }
 
-        let generation_product = organ.organ.get_generated_organ_commands(self_entity, relations.parent, &consts);
+        let generation_product = organ.organ.get_generated_organ_commands(self_entity, relations.parent, &mut rng, &consts);
 
         let spawned_entities = spawn_organs(
             generation_product.spawned,

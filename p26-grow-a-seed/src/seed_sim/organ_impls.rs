@@ -82,7 +82,7 @@ impl Default for GenerationResult {
 }
 
 impl Organ {
-    pub fn get_generated_organ_commands(&mut self, self_entity: Entity, self_parent: Option<Entity>, consts: &OrganGenerationConsts) -> GenerationResult {
+    pub fn get_generated_organ_commands(&mut self, self_entity: Entity, self_parent: Option<Entity>, rng: &mut SmallRng, consts: &OrganGenerationConsts) -> GenerationResult {
         return match self {
             Organ::Seed => {
                 *self = Organ::Origin;
@@ -110,7 +110,8 @@ impl Organ {
                 gen_result
             },
             Organ::Root{ref mut rotation} => {
-                *rotation += 0.01;
+                let rot_change = rng.gen_range(-0.01..0.01);
+                *rotation += rot_change;
                 Default::default()
             },
             Organ::EventualBranch { steps_till_branch: 0 } => {
