@@ -15,7 +15,7 @@ fn main() {
                     // set the minimum # of compute threads
                     // to the total number of available threads
                     min_threads: 1,
-                    max_threads: available_parallelism().min(2), // limit the max # of compute threads to 2
+                    max_threads: available_parallelism().min(4), // limit the max # of compute threads to 4
                     percent: 1.0, // this value is irrelevant in this case
                 },
                 // keep the defaults for everything else

@@ -1,6 +1,6 @@
 
 pub const SEED_N: usize = 10;
-pub const MAXIMUM_ENTITY_COUNT: usize = 200_000;
+pub const MAXIMUM_ENTITY_COUNT: usize = 100_000;
 
 pub const INITIAL_LIFESPAN_SECONDS: f32 = 30.0;
 pub const LIFESPAN_JITTER: f32 = 0.25;
