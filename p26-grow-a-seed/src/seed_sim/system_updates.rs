@@ -20,23 +20,24 @@ pub fn organ_lifespan_death(
 pub fn organ_production(
     time: Res<Time>,
     mut parent_retarget_res: ResMut<OrganParentRetargetingResources>,
-    mut query: Query<(Entity, &mut EntityOrgan, &mut SeedTimer, &OrganLifespan, &Transform)>,
+    mut query: Query<(Entity, &mut EntityOrgan, &mut SeedTimer, &OrganLifespan, &mut OrganRelations, &Transform)>,
     mut commands: Commands)
 {
+    let consts: OrganGenerationConsts =  Default::default();
     let mut parent_retargets = Vec::new();
-    for (self_entity, mut organ, mut timer, lifespan, transform) in query.iter_mut() {
+    for (self_entity, mut organ, mut timer, lifespan, mut relations, transform) in query.iter_mut() {
         if !timer.0.tick(time.delta()).just_finished() {
             continue;
         }
 
-        let (generations, parent_retarget) = organ.organ.get_generated_organ_commands(self_entity);
+        let generation_product = organ.organ.get_generated_organ_commands(self_entity, relations.parent, &consts);
 
         let spawned_entities = spawn_organs(
-            generations,
+            generation_product.spawned,
             transform.clone(),
             lifespan,
             &mut commands);
-        match parent_retarget {
+        match generation_product.children_point_to {
             ParentRetarget::Changed(parent) => {
                 parent_retargets.push(ParentRetargetFull{
                     from: self_entity,
@@ -45,6 +46,15 @@ pub fn organ_production(
                         GeneratedEntityReference::External(entity) => entity,
                     }
                 })
+            },
+            ParentRetarget::Unchanged => {}
+        }
+        match generation_product.parent_point_to {
+            ParentRetarget::Changed(parent) => {
+                relations.parent = match parent {
+                    GeneratedEntityReference::Internal(index) => Some(spawned_entities[index]),
+                    GeneratedEntityReference::External(entity) => Some(entity),
+                }
             },
             ParentRetarget::Unchanged => {}
         }

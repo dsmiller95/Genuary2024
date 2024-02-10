@@ -1,5 +1,6 @@
 use crate::seed_sim::prelude::*;
 
+/// out of all entities which have a parent == from, mut them such that parent == to
 #[derive(Debug, Clone)]
 pub struct ParentRetargetFull {
     pub from: Entity,

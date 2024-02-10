@@ -6,7 +6,7 @@ impl Organ{
         match self{
             Organ::Seed => Transform::IDENTITY,
             Organ::Stem(stem) => {
-                Transform::from_xyz(0.0, stem.length/5.0, 0.0)
+                Transform::from_xyz(0.0, stem.partial_length, 0.0)
             },
             Organ::Crook { angle } => {
                 Transform::from_rotation(Quat::from_rotation_z(*angle))
@@ -18,6 +18,7 @@ impl Organ{
                 Transform::from_rotation(Quat::from_rotation_z(*rotation))
             },
             Organ::Origin => Transform::IDENTITY,
+            Organ::StemSeg => Transform::from_xyz(0.0, SEGMENT_LEN, 0.0),
         }
     }
 
@@ -25,7 +26,7 @@ impl Organ{
         match self{
             Organ::Seed => Transform::IDENTITY,
             Organ::Stem(stem) => {
-                Transform::from_scale(Vec3::new(1.0, stem.length/5.0, 1.0))
+                Transform::from_scale(Vec3::new(1.0, stem.partial_length, 1.0))
             },
             Organ::Crook{..} => Transform::IDENTITY,
             Organ::Leaf => Transform::IDENTITY,
@@ -33,6 +34,7 @@ impl Organ{
             Organ::Fruit => Transform::IDENTITY,
             Organ::Root{..} => Transform::IDENTITY,
             Organ::Origin => Transform::IDENTITY,
+            Organ::StemSeg => Transform::IDENTITY
         }
     }
 }
@@ -42,19 +44,44 @@ pub struct SpawnedOrgan{
     pub parent: Option<GeneratedEntityReference>,
 }
 
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum GeneratedEntityReference {
+    /// Index into the list of spawned entities
     Internal(usize),
+    /// Reference to an entity that was not spawned this frame
     External(Entity)
 }
 
 /// Which entity to point all children to, if changed
+#[derive(Debug, Eq, PartialEq, Clone)]
 pub enum ParentRetarget {
+    // point all parents of the current entity to this entity
     Changed(GeneratedEntityReference),
     Unchanged,
 }
 
+pub struct GenerationResult{
+    pub spawned: Vec<SpawnedOrgan>,
+    /// a retarget operation to apply to all children of the current entity
+    /// When `Changed`, will move all children of the current node to the new parent
+    pub children_point_to: ParentRetarget,
+    /// a retarget operation to apply to -this- entity.
+    /// When `Changed`, will move the current entity to the new parent
+    pub parent_point_to: ParentRetarget,
+}
+
+impl Default for GenerationResult {
+    fn default() -> Self {
+        GenerationResult {
+            spawned: vec![],
+            children_point_to: ParentRetarget::Unchanged,
+            parent_point_to: ParentRetarget::Unchanged,
+        }
+    }
+}
+
 impl Organ {
-    pub fn get_generated_organ_commands(&mut self, self_entity: Entity) -> (Vec<SpawnedOrgan>, ParentRetarget) {
+    pub fn get_generated_organ_commands(&mut self, self_entity: Entity, self_parent: Option<Entity>, consts: &OrganGenerationConsts) -> GenerationResult {
         return match self {
             Organ::Seed => {
                 *self = Organ::Origin;
@@ -64,73 +91,246 @@ impl Organ {
                         parent: Some(GeneratedEntityReference::External(self_entity)),
                     },
                     SpawnedOrgan{
-                        organ: Organ::Stem(Stem { length: 0.0 }),
+                        organ: Organ::Stem(Default::default()),
                         parent: Some(GeneratedEntityReference::Internal(0)),
                     },
                 ];
-                (spawned, ParentRetarget::Changed(GeneratedEntityReference::Internal(1)))
+                GenerationResult {
+                    spawned,
+                    children_point_to: ParentRetarget::Changed(GeneratedEntityReference::Internal(1)),
+                    parent_point_to: ParentRetarget::Unchanged,
+                }
             }
             Organ::Stem(ref mut stem) => {
-                enum GrowthState{
-                    FullyGrown, Growing
+                let (replacement_organ, gen_result) = stem.get_production_result(self_entity, self_parent, consts);
+                if let Some(replacement_organ) = replacement_organ {
+                    *self = replacement_organ;
                 }
-                let last_grow_state = match stem.length {
-                    MAX_STEM_LENGTH.. => GrowthState::FullyGrown,
-                    _ => GrowthState::Growing,
-                };
-                let new_length = stem.length + 1.0;
-                let next_grow_state = match new_length {
-                    MAX_STEM_LENGTH.. => GrowthState::FullyGrown,
-                    _ => GrowthState::Growing,
-                };
-                match (last_grow_state, next_grow_state) {
-                    (GrowthState::Growing, GrowthState::FullyGrown) => {
-                        stem.length = MAX_STEM_LENGTH;
-                        let spawned = vec![
-                            SpawnedOrgan{
-                                organ: Organ::Crook{ angle: 0.5 },
-                                parent: Some(GeneratedEntityReference::External(self_entity)),
-                            },
-                            SpawnedOrgan{
-                                organ: Organ::Crook{ angle: -0.5 },
-                                parent: Some(GeneratedEntityReference::External(self_entity)),
-                            },
-                            SpawnedOrgan{
-                                organ: Organ::Stem(Stem { length: 0.0 }),
-                                parent: Some(GeneratedEntityReference::Internal(0)),
-                            },
-                            SpawnedOrgan{
-                                organ: Organ::Stem(Stem { length: 0.0 }),
-                                parent: Some(GeneratedEntityReference::Internal(1)),
-                            },
-                            SpawnedOrgan{
-                                organ: Organ::Crook{ angle: -PI / 2.0 },
-                                parent: Some(GeneratedEntityReference::External(self_entity)),
-                            },
-                            SpawnedOrgan{
-                                organ: Organ::Leaf,
-                                parent: Some(GeneratedEntityReference::Internal(4)),
-                            },
-                        ];
-                        (spawned, ParentRetarget::Changed(GeneratedEntityReference::Internal(1)))
-                    },
-                    (GrowthState::Growing, GrowthState::Growing) => {
-                        stem.length = new_length;
-                        (vec![], ParentRetarget::Unchanged)
-                    },
-                    (GrowthState::FullyGrown, GrowthState::FullyGrown) => {
-                        stem.length = MAX_STEM_LENGTH;
-                        (vec![], ParentRetarget::Unchanged)
-                    },
-                    (GrowthState::FullyGrown, GrowthState::Growing) =>
-                        panic!("Cannot transition from fully grown to growing")
-                }
+                gen_result
             },
             Organ::Root{ref mut rotation} => {
                 *rotation += 0.01;
-                (vec![], ParentRetarget::Unchanged)
+                Default::default()
             },
-            _ => (vec![], ParentRetarget::Unchanged),
+            _ => default(),
         }
+    }
+}
+
+
+impl Stem {
+    pub fn extend_up_to_max(&mut self, extra_len: f32, max_len: f32) -> GeneratedStem{
+        let current_total_len = self.generated_len();
+        let new_length = (current_total_len + extra_len).min(max_len);
+        let actual_increment = new_length - current_total_len;
+        if actual_increment <= EPSILON {
+            return GeneratedStem{ new_segments: 0, did_grow: false }
+        }
+
+        let new_length = self.partial_length + extra_len;
+        let new_segments = (new_length / SEGMENT_LEN).floor() as u8;
+        self.partial_length = new_length - (new_segments as f32 * SEGMENT_LEN);
+        GeneratedStem{ new_segments, did_grow: true }
+    }
+
+    pub fn generated_len(&self) -> f32 {
+        self.partial_length + (self.generated_segments as f32 * SEGMENT_LEN)
+    }
+
+    pub fn get_production_result(&mut self, self_entity: Entity, self_parent: Option<Entity>, consts: &OrganGenerationConsts) -> (Option<Organ>, GenerationResult){
+        enum GrowthState{
+            FullyGrown, Growing
+        }
+
+        let growth_increment = consts.stem_growth_per_step;
+        let growth_result = self.extend_up_to_max(growth_increment, consts.max_stem_length);
+
+        // if we didn't grow, then we have completed our lifecycle, and replace ourselves.
+        if !growth_result.did_grow {
+            let spawned = vec![
+                SpawnedOrgan{
+                    organ: Organ::Crook{ angle: 0.5 },
+                    parent: Some(GeneratedEntityReference::External(self_entity)),
+                },
+                SpawnedOrgan{
+                    organ: Organ::Crook{ angle: -0.5 },
+                    parent: Some(GeneratedEntityReference::External(self_entity)),
+                },
+                SpawnedOrgan{
+                    organ: Organ::Stem(Default::default()),
+                    parent: Some(GeneratedEntityReference::Internal(0)),
+                },
+                SpawnedOrgan{
+                    organ: Organ::Stem(Default::default()),
+                    parent: Some(GeneratedEntityReference::Internal(1)),
+                },
+                SpawnedOrgan{
+                    organ: Organ::Crook{ angle: -PI / 2.0 },
+                    parent: Some(GeneratedEntityReference::External(self_entity)),
+                },
+                SpawnedOrgan{
+                    organ: Organ::Leaf,
+                    parent: Some(GeneratedEntityReference::Internal(4)),
+                },
+            ];
+            return (
+                Some(Organ::StemSeg),
+                GenerationResult {
+                    spawned,
+                    children_point_to: ParentRetarget::Changed(GeneratedEntityReference::Internal(1)),
+                    parent_point_to: ParentRetarget::Unchanged,
+                }
+            );
+        }
+
+        if growth_result.new_segments <= 0 {
+            return Default::default();
+        }
+
+        let mut spawned = Vec::with_capacity(growth_result.new_segments as usize);
+
+        for i in 0..growth_result.new_segments {
+            let parent = match i {
+                0 => match self_parent {
+                    Some(parent) => Some(GeneratedEntityReference::External(parent)),
+                    None => None,
+                },
+                _ => Some(GeneratedEntityReference::Internal(i as usize - 1)),
+            };
+            spawned.push(SpawnedOrgan{
+                organ: Organ::StemSeg,
+                parent: parent,
+            });
+        }
+
+        let self_parent_points_to = ParentRetarget::Changed(GeneratedEntityReference::Internal(growth_result.new_segments as usize - 1));
+
+        return (
+            None,
+            GenerationResult {
+                spawned,
+                children_point_to: ParentRetarget::Unchanged,
+                parent_point_to: self_parent_points_to,
+            }
+        );
+    }
+}
+
+struct GeneratedStem{
+    new_segments: u8,
+    did_grow: bool,
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn when_growth_less_than_segment_len__grows_without_spawning(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 0.2;
+
+        let mut organ = Organ::Stem(Stem::default());
+        let parent = Entity::from_raw(0);
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, Some(parent), &consts);
+
+        assert_eq!(result.spawned.len(), 0);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Unchanged);
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.2, generated_segments: 0 }));
+    }
+
+    #[test]
+    fn when_growth_more_than_segment_len__spawns_segment(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 1.2;
+        consts.segment_len = 1.0;
+
+        let mut organ = Organ::Stem(Stem::default());
+        let parent = Entity::from_raw(0);
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, Some(parent), &consts);
+
+        assert_eq!(result.spawned.len(), 1);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Changed(GeneratedEntityReference::Internal(0)));
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.2, generated_segments: 1 }));
+
+        let spawned_seg = result.spawned.first().unwrap();
+        assert_eq!(spawned_seg.organ, Organ::StemSeg);
+        assert_eq!(spawned_seg.parent, Some(GeneratedEntityReference::External(parent)));
+    }
+
+    #[test]
+    fn when_has_no_parent__and_spawns_segment__segment_parent_is_none(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 1.2;
+        consts.segment_len = 1.0;
+
+        let mut organ = Organ::Stem(Stem::default());
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, None, &consts);
+
+        assert_eq!(result.spawned.len(), 1);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Changed(GeneratedEntityReference::Internal(0)));
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.2, generated_segments: 1 }));
+
+        let spawned_seg = result.spawned.first().unwrap();
+        assert_eq!(spawned_seg.organ, Organ::StemSeg);
+        assert_eq!(spawned_seg.parent, None);
+    }
+
+    #[test]
+    fn when_growth_more_than_segment_len__spawns_multiple_segments(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 2.3;
+        consts.segment_len = 1.0;
+
+        let mut organ = Organ::Stem(Stem::default());
+        let parent = Entity::from_raw(0);
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, Some(parent), &consts);
+
+        assert_eq!(result.spawned.len(), 2);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Changed(GeneratedEntityReference::Internal(1)));
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.3, generated_segments: 2 }));
+    }
+
+    #[test]
+    fn when_growth_more_than_segment_len__spawns_multiple_segments__and_grows_partial_length(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 0.8;
+        consts.segment_len = 1.0;
+
+        let mut organ = Organ::Stem(Stem{ partial_length: 0.4, generated_segments: 2 });
+        let parent = Entity::from_raw(0);
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, Some(parent), &consts);
+
+        assert_eq!(result.spawned.len(), 2);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Changed(GeneratedEntityReference::Internal(1)));
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.2, generated_segments: 3 }));
+    }
+
+    #[test]
+    fn when_growth_hits_max_length__grows_to_max(){
+        let mut consts: OrganGenerationConsts = Default::default();
+        consts.stem_growth_per_step = 1.7;
+        consts.segment_len = 1.0;
+        consts.max_stem_length = 5.0;
+
+        let mut organ = Organ::Stem(Stem{ partial_length: 0.6, generated_segments: 4 });
+        let parent = Entity::from_raw(0);
+        let self_entity = Entity::from_raw(1);
+        let result = organ.get_generated_organ_commands(self_entity, Some(parent), &consts);
+
+        assert_eq!(result.spawned.len(), 1);
+        assert_eq!(result.children_point_to, ParentRetarget::Unchanged);
+        assert_eq!(result.parent_point_to, ParentRetarget::Changed(GeneratedEntityReference::Internal(0)));
+        assert_eq!(organ, Organ::Stem(Stem{ partial_length: 0.0, generated_segments: 5 }));
     }
 }
